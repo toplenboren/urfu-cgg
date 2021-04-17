@@ -2,6 +2,6 @@
 
 A repo to hold solutions for tasks from computer graphics and geometry course @ urfu
 
-## Task 1: Plot a graph of function: 1/
+## Task 1: Plot a graph of function:
 
-> Solution: TODO
+> Solution: [here](https://toplenboren.github.io/urfu-cgg/1/index)
