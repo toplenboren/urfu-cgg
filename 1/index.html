@@ -1,59 +1,76 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <title>Graph-plotter</title>
+        <script type="text/javascript">
 
-<head>
-    <title>Canvas code example</title>
-    <script type="text/javascript">
+            function drawAxes(ctx, axes) {
+                const x0 = axes.x0, w = ctx.canvas.width
+                const y0 = axes.y0, h = ctx.canvas.height
+                const xmin = axes.doNegativeX ? 0 : x0
 
-        function fun1(x) { return x*x; }
-        function fun2(x) { return x*x*x; }
-
-        function showAxes(ctx, axes) {
-            var x0 = axes.x0, w = ctx.canvas.width;
-            var y0 = axes.y0, h = ctx.canvas.height;
-            var xmin = axes.doNegativeX ? 0 : x0;
-            ctx.beginPath();
-            ctx.strokeStyle = "rgb(128,128,128)";
-            ctx.moveTo(xmin, y0); ctx.lineTo(w, y0);  // X axis
-            ctx.moveTo(x0, 0); ctx.lineTo(x0, h);  // Y axis
-            ctx.stroke();
-        }
-
-        function draw() {
-            var canvas = document.getElementById("canvas");
-            if (null == canvas || !canvas.getContext) return;
-
-            var axes = {}, ctx = canvas.getContext("2d");
-            axes.x0 = .5 + .5 * canvas.width;  // x0 pixels from left to x=0
-            axes.y0 = .5 + .5 * canvas.height; // y0 pixels from top to y=0
-            axes.scale = 40;                   // 40 pixels from x=0 to x=1
-            axes.doNegativeX = true;
-
-            showAxes(ctx, axes);
-            funGraph(ctx, axes, fun1, "rgb(11,153,11)", 1);
-            funGraph(ctx, axes, fun2, "rgb(66,44,255)", 2);
-        }
-
-        function funGraph(ctx, axes, func, color, thickness) {
-            var xx, yy, dx = 4, x0 = axes.x0, y0 = axes.y0, scale = axes.scale;
-            var iMax = Math.round((ctx.canvas.width - x0) / dx);
-            var iMin = axes.doNegativeX ? Math.round(-x0 / dx) : 0;
-            ctx.beginPath();
-            ctx.lineWidth = thickness;
-            ctx.strokeStyle = color;
-
-            for (var i = iMin; i <= iMax; i++) {
-                xx = dx * i; yy = scale * func(xx / scale);
-                if (i == iMin) ctx.moveTo(x0 + xx, y0 - yy);
-                else ctx.lineTo(x0 + xx, y0 - yy);
+                ctx.beginPath();
+                ctx.strokeStyle = "rgb(128,128,128)"
+                ctx.moveTo(xmin, y0); ctx.lineTo(w, y0)  
+                ctx.moveTo(x0, 0); ctx.lineTo(x0, h)
+                ctx.stroke();
             }
-            ctx.stroke();
-        }
-    </script>
-</head>
 
-<body onload="draw()">
-    <canvas id="canvas" width="512" height="512"></canvas>
-</body>
+            function draw(scale=40, func=((x) => Math.sin(x))) {
+                const canvas = document.getElementById("canvas")
 
+                if (!canvas?.getContext) return
+                const ctx = canvas.getContext("2d")
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const axes = {}
+                axes.x0 = .5 + .5 * canvas.width   
+                axes.y0 = .5 + .5 * canvas.height  
+                axes.scale = scale;                
+                axes.doNegativeX = true;
+
+                drawAxes(ctx, axes);
+
+                plotGraph(ctx, axes, func, "rgb(153,11,11)", 2);
+            }
+
+            function plotGraph(ctx, axes, func, color, thickness) {
+                let xx = 4
+                let yy = 4
+                const dx = 0.005
+
+                const x0 = axes.x0
+                const y0 = axes.y0
+                const scale = axes.scale
+
+                const iMax = Math.round((ctx.canvas.width - x0) / dx);
+                const iMin = axes.doNegativeX ? Math.round(-x0 / dx) : 0;
+
+                ctx.beginPath();
+                ctx.lineWidth = thickness;
+                ctx.strokeStyle = color;
+
+                for (let i = iMin; i <= iMax; ++i) {
+                    xx = dx * i
+                    yy = scale * func(xx / scale)
+
+                    if (i == iMin) {
+                        ctx.moveTo(x0 + xx, y0 - yy)
+                    } else { 
+                        ctx.lineTo(x0 + xx, y0 - yy)
+                    }
+                }
+
+                ctx.stroke();
+            }
+        </script>
+    </head>
+    <body>
+        <nav style="padding: 10px;">
+            <input id="function" value="Math.sin(x)">
+            <button onclick="draw(40, (x) => eval(document.getElementById('function').value))">Plot a function graph</button>
+            <button onclick="draw(40)">Example</button>
+        </nav>
+            <canvas id="canvas" width="512" height="512"></canvas>
+    </body>
 </html>
