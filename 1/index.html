@@ -1,76 +1,87 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Graph-plotter</title>
-        <script type="text/javascript">
+<html lang="en">
+<head>
+    <title>Graph-plotter</title>
+    <script type="text/javascript">
 
-            function drawAxes(ctx, axes) {
-                const x0 = axes.x0, w = ctx.canvas.width
-                const y0 = axes.y0, h = ctx.canvas.height
-                const xmin = axes.doNegativeX ? 0 : x0
+        function draw(func, from, to) {
+            const canvas = document.getElementById("canvas")
 
-                ctx.beginPath();
-                ctx.strokeStyle = "rgb(128,128,128)"
-                ctx.moveTo(xmin, y0); ctx.lineTo(w, y0)  
-                ctx.moveTo(x0, 0); ctx.lineTo(x0, h)
-                ctx.stroke();
-            }
+            if (!canvas?.getContext) return
+            const ctx = canvas.getContext("2d")
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            function draw(scale=40, func=((x) => Math.sin(x))) {
-                const canvas = document.getElementById("canvas")
+            plotGraph(ctx, func, from, to);
+        }
 
-                if (!canvas?.getContext) return
-                const ctx = canvas.getContext("2d")
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                const axes = {}
-                axes.x0 = .5 + .5 * canvas.width   
-                axes.y0 = .5 + .5 * canvas.height  
-                axes.scale = scale;                
-                axes.doNegativeX = true;
+        function plotGraph(ctx, func, from, to) {
 
-                drawAxes(ctx, axes);
+            const RESOLUTION = 1 / 10
+            const THRESHOLD = Math.pow(10, -5)
+            const DRAWY_THINGIES = 70
 
-                plotGraph(ctx, axes, func, "rgb(153,11,11)", 2);
-            }
+            const startY = func(from)
+            const startX = from
+            const endX = to
 
-            function plotGraph(ctx, axes, func, color, thickness) {
-                let xx = 4
-                let yy = 4
-                const dx = 0.005
+            let minY = 99999999999
+            let minX = 0
+            let maxY = -99999999999
+            let maxX = 0
 
-                const x0 = axes.x0
-                const y0 = axes.y0
-                const scale = axes.scale
-
-                const iMax = Math.round((ctx.canvas.width - x0) / dx);
-                const iMin = axes.doNegativeX ? Math.round(-x0 / dx) : 0;
-
-                ctx.beginPath();
-                ctx.lineWidth = thickness;
-                ctx.strokeStyle = color;
-
-                for (let i = iMin; i <= iMax; ++i) {
-                    xx = dx * i
-                    yy = scale * func(xx / scale)
-
-                    if (i == iMin) {
-                        ctx.moveTo(x0 + xx, y0 - yy)
-                    } else { 
-                        ctx.lineTo(x0 + xx, y0 - yy)
-                    }
+            for (let x = startX; x <= (endX + THRESHOLD); x += RESOLUTION) {
+                const valY = func(x)
+                if (valY > maxY) {
+                    maxY = valY
+                    maxX = x
                 }
-
-                ctx.stroke();
+                if (valY < minY) {
+                    minY = valY
+                    minX = x
+                }
             }
-        </script>
-    </head>
-    <body>
-        <nav style="padding: 10px;">
-            <input id="function" value="Math.sin(x)">
-            <button onclick="draw(40, (x) => eval(document.getElementById('function').value))">Plot a function graph</button>
-            <button onclick="draw(40)">Example</button>
-        </nav>
-            <canvas id="canvas" width="512" height="512"></canvas>
-    </body>
+
+            const scaleX = ctx.canvas.width / (to - from)
+            const scaleY = ctx.canvas.height / (maxY - minY)
+
+            console.log(`Minimal value of f: ${minY} at ${minX}`)
+            console.log(`Maximum value of f: ${maxY} at ${maxX}`)
+
+            ctx.fillStyle = "#10104a";
+            ctx.font = "italic 16pt Arial";
+
+            let offset;
+
+            if (startY === minY) {
+                offset = ctx.canvas.height + startY * scaleY
+                console.log(`f is growing. Calculated offset: ${offset}`)
+            } else if (minY < startY && startY < maxY) {
+                offset = (ctx.canvas.height / 2) + ((minY + maxY) / 2) * scaleY
+                console.log(`f is mixed. Calculated offset: ${offset}`)
+            } else if (startY > minY) {
+                offset = startY * scaleY
+                console.log(`f is fading. Calculated offset: ${offset}`)
+            }
+
+            for (let i = 0; i < ctx.canvas.width; ++i) {
+                const trueX = i / scaleX + from
+                const trueY = func(trueX)
+
+                const projectedX = i
+                const projectedY = scaleY * trueY * -1 + offset
+
+                ctx.lineTo(projectedX, projectedY)
+
+                if (i % DRAWY_THINGIES <= THRESHOLD) {
+                    ctx.fillText(`(${trueX.toFixed(2)}:${trueY.toFixed(2)})`, projectedX, projectedY);
+                }
+            }
+
+            ctx.stroke()
+        }
+    </script>
+</head>
+<body onload="draw((x) => Math.sin(x), -Math.PI, Math.PI)">
+<canvas style="background-color: antiquewhite;" id="canvas" width="512" height="512"></canvas>
+</body>
 </html>
