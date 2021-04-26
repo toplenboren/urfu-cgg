@@ -11,10 +11,21 @@
             const ctx = canvas.getContext("2d")
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            let temp;
+            if (from > to) {
+                temp = from;
+                from = to;
+                to = temp;
+            }
+
             plotGraph(ctx, func, from, to);
         }
 
         function plotGraph(ctx, func, from, to) {
+
+            ctx.fillStyle = "#10104a";
+            ctx.font = "16pt Arial";
+            ctx.strokeStyle = 'blue';
 
             const RESOLUTION = 1 / 10
             const THRESHOLD = Math.pow(10, -5)
@@ -47,9 +58,6 @@
             console.log(`Minimal value of f: ${minY} at ${minX}`)
             console.log(`Maximum value of f: ${maxY} at ${maxX}`)
 
-            ctx.fillStyle = "#10104a";
-            ctx.font = "italic 16pt Arial";
-
             let offset;
 
             if (startY === minY) {
@@ -63,12 +71,18 @@
                 console.log(`f is fading. Calculated offset: ${offset}`)
             }
 
+            let offsetX = 0
+
             for (let i = 0; i < ctx.canvas.width; ++i) {
                 const trueX = i / scaleX + from
                 const trueY = func(trueX)
 
                 const projectedX = i
                 const projectedY = scaleY * trueY * -1 + offset
+
+                if (trueX < THRESHOLD) {
+                    offsetX = i
+                }
 
                 ctx.lineTo(projectedX, projectedY)
 
@@ -78,10 +92,32 @@
             }
 
             ctx.stroke()
+
+            ctx.beginPath()
+
+            ctx.strokeStyle = 'black';
+
+            const xAxisStartX = 0
+            const xAxisStartY = offset
+            const xAxisEndX = ctx.canvas.width
+            const xAxisEndY = offset
+
+            const yAxisStartX = offsetX
+            const yAxisStartY = ctx.canvas.height
+            const yAxisEndX = offsetX
+            const yAxisEndY = 0
+
+            ctx.moveTo(xAxisStartX, xAxisStartY);
+            ctx.lineTo(xAxisEndX, xAxisEndY)
+
+            ctx.moveTo(yAxisStartX, yAxisStartY);
+            ctx.lineTo(yAxisEndX, yAxisEndY)
+
+            ctx.stroke()
         }
     </script>
 </head>
-<body onload="draw((x) => Math.sin(x), -Math.PI, Math.PI)">
-<canvas style="background-color: antiquewhite;" id="canvas" width="512" height="512"></canvas>
+<body onload="draw((x) => Math.sin(x*x), -2 * Math.PI, Math.PI)">
+<canvas style="background-color: antiquewhite;" id="canvas" width="1024" height="1024"></canvas>
 </body>
 </html>
